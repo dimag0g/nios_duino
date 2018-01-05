@@ -1,4 +1,3 @@
-NIOSDuino - Arduino framework running on NIOS II
 
 About NIOSDuino
 ---------------
@@ -26,6 +25,7 @@ locations.
 
 3. Run Qsys tool and open nios_sdram.qsys. Remove EPCS controller if you
 don't have the serial flash chip or don't plan to use it as software storage.
+If you do, you will need to change the CPU reset location from EPCS to RAM.
 Generate the HDL (and the symbol, if you plan to use graphical schematic
 editor).
 
@@ -43,7 +43,7 @@ and sys_clk timers to timer_0.
 you just created. Add files from nios_duino folder to your project, keeping
 the folder structure. Then add a few settings to project properties:
 
- - add definitions: "__AVR__" and "ARDUINO=185" to C and C++ symbols
+ - add definitions: `__AVR__` and `ARDUINO=185` to C and C++ symbols
 
  - add "arduino" folder and folders of libraries you're going to use
 (e.g. "arduino/SPI/src") to C and C++ include directories
@@ -59,7 +59,7 @@ Basically, what you need is a dev board with an FPGA capable of implementing
 a NIOS II CPU, enough on-board RAM to run the code, and enoug flash storage
 if you want your code to be persistent.
 
-FPGA - Ideally, you'll need any IC of Cyclone, Stratix or Arria families.
+- FPGA - Ideally, you'll need any IC of Cyclone, Stratix or Arria families.
 It should also be possible to implement NIOS on a MAX 10 device, but you
 have to make sure the FPGA is big enough to support the CPU. Also check
 that the IO voltage supported by the FPGA is compatible with the hadware
@@ -71,21 +71,21 @@ extensions (like C++1x) that Arduino code requires. While it's still
 possible to run some older Arduino libraries using the old toolchain, it
 was decided it's not worth the effort, so Cyclone II is not supported.
 
-RAM - NIOSDuino requires much more RAM than Arduino. Unless you have flash
+- RAM - NIOSDuino requires much more RAM than Arduino. Unless you have flash
 which supports code execution, all program code will have to reside in RAM,
-plus there's a lot of overhead in using POSIX functions instead of AVR
+plus there's a lot of overhead in using POSIX functions to mimic the AVR
 library. Depending on the libraries you will use, you should expect as much
 as 500 kB of RAM to be required. Luckily, most FPGA boards come with at least
 several MB of SRAM, or tens of MB of SDRAM.
 
-Flash - The typical solution present on Altera dev boards is to use the same
+- Flash - The typical solution present on Altera dev boards is to use the same
 EPCS serial flash chip for FPGA configuration and program storage. Note that
 serial flash cannot be used as code ROM - EPCS component provides a bootloader
 which reads the contents of the flash in the RAM and executes the code from
 there. Unless you have a NOR flash, you will still need the same amount of RAM
 to run your code.
 
-Cheaper dev boards come with EPCS4 chip which only provides 512kB ofstorage,
+Cheaper dev boards come with EPCS4 chip which only provides 512kB of storage
 shared between the FPGA configuration data and the software, so it will
 probably be not big enough. Try to get at least EPCS16 if you plan to store
 your code on the board.
@@ -114,22 +114,23 @@ will have as many pins as you have configured, with a max of 32.
 will be used to interact with hadware modules you want to connect to your
 dev board. It is recommended to make UART baud rate software-configurable.
 It should be possible to include several UARTs and easily integrate them
-in Arduino framework as Serial1, Serial2, etc.
+in Arduino framework as `Serial1`, `Serial2`, etc.
 
 - EPCS controller. You only need it if you plan to store your software in EPCS.
 [Here](https://www.altera.com/support/support-resources/knowledge-base/solutions/rd04112006_450.html)'s
 an article describing how to program the EPCS device with FPGA SOF file and
-software ELF file simultaneously
+software ELF file simultaneously.
 
-- JTAG UART, LCD or any other compoment which can be selected as STDIN/STDOUT.
+- JTAG UART, 16x2 LCD or any other compoment which can be selected as
+STDIN/STDOUT.
 
-- Timer. This will enable time functions, such as millis() and micros().
+- Timer. This will enable time functions, such as `millis()` and `micros()`.
 
 Programming model
 -----------------
 
 Digital pins are accessible by index, starting from 0. That is,
-digitalWrite(0, LOW) will set PIO pin 0 to LOW.
+`digitalWrite(0, LOW)` will set PIO pin 0 to LOW.
 
 Unlike actual AVR chips, QSys components don't share pins with each other.
 This means you can use all the PIO pins and SPI/UART modules in parallel.
@@ -137,18 +138,18 @@ There's also no need to e.g. configure pin direction for SPI/UART pins.
 Note that existing libraries may still assume that shared pins are used, and
 configure them accordingly.
 
-Hardware UARTs are accessible as Serial0, Serial1, etc. Only baudrate
-setting is taken into account in SerialN.begin(), bit settings have to be
+Hardware UARTs are accessible as `Serial0`, `Serial1`, etc. Only baudrate
+setting is taken into account in `SerialN.begin()`, bit settings have to be
 configured in QSys and cannot be changed at runtime.
 
 Serial is reserved to be whatever component you chose as STDIN/STDOUT,
 which can be a UART, a JTAG UART or even an LCD. Obviously, any baudrate
-or bit settings given in Serial.begin() are ignored. If a UART is to be
-used in a sketch which refers to Serial, it is recommended to
+or bit settings given in `Serial.begin()` are ignored. If a UART is to be
+used in a sketch which refers to `Serial`, it is recommended to
 
     #define Serial Serial0
 
-Note that the same UART should not be used as STDIN/STDOUT and as SerialN
+Note that the same UART should not be used as STDIN/STDOUT and as `SerialN`
 device at the same time.
 
 SPI controller manages 3 pins - MISO, MOSI and CLK. SS signal is not used
