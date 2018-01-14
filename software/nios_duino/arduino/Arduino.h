@@ -27,6 +27,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
+#include <sys/alt_timestamp.h>
 
 #include <avr/pgmspace.h>
 //!#include <avr/io.h>
@@ -141,7 +142,7 @@ void analogReference(uint8_t mode);
 void analogWrite(uint8_t, int);
 
 #define millis() (clock())       //! implement time functions using sys/time.h
-#define micros() (clock()*1000)
+#define micros() (clock()*1000)  //(alt_timestamp()/(TIMER_0_FREQ/1000000))
 // usleep() is based on busy-waiting, so it only works correctly
 // when running from on-chip memory. External SRAM/SDRAM adds delays
 // for each fetch/execute operation, making the CPU almost

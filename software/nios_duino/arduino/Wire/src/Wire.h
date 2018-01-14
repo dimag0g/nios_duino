@@ -25,6 +25,7 @@
 #define TwoWire_h
 
 #include <inttypes.h>
+#include <altera_avalon_i2c.h>
 #include "Stream.h"
 
 #define BUFFER_LENGTH 32
@@ -35,6 +36,9 @@
 class TwoWire : public Stream
 {
   private:
+
+	ALT_AVALON_I2C_DEV_t* dev;
+
     static uint8_t rxBuffer[];
     static uint8_t rxBufferIndex;
     static uint8_t rxBufferLength;

@@ -49,7 +49,7 @@ int GenericSerial::peek(void)
 
 int GenericSerial::read(void)
 {
-  return alt_getchar();
+  //return alt_getchar();
 }
 
 int GenericSerial::availableForWrite(void)
@@ -66,6 +66,7 @@ void GenericSerial::flush()
 
 size_t GenericSerial::write(uint8_t c)
 {
+  fputc(c, stderr);
   return alt_putchar(c);
 }
 

@@ -26,7 +26,7 @@
    {
       datum _sortIndex
       {
-         value = "8";
+         value = "9";
          type = "int";
       }
    }
@@ -38,11 +38,27 @@
          type = "String";
       }
    }
-   element jtag_uart_0
+   element i2c_0
    {
       datum _sortIndex
       {
          value = "4";
+         type = "int";
+      }
+   }
+   element i2c_0.csr
+   {
+      datum baseAddress
+      {
+         value = "131072";
+         type = "String";
+      }
+   }
+   element jtag_uart_0
+   {
+      datum _sortIndex
+      {
+         value = "5";
          type = "int";
       }
       datum sopceditor_expanded
@@ -76,7 +92,7 @@
    {
       datum _sortIndex
       {
-         value = "7";
+         value = "8";
          type = "int";
       }
       datum sopceditor_expanded
@@ -110,7 +126,7 @@
    {
       datum _sortIndex
       {
-         value = "9";
+         value = "10";
          type = "int";
       }
    }
@@ -126,7 +142,7 @@
    {
       datum _sortIndex
       {
-         value = "6";
+         value = "7";
          type = "int";
       }
    }
@@ -158,7 +174,7 @@
    {
       datum _sortIndex
       {
-         value = "5";
+         value = "6";
          type = "int";
       }
       datum sopceditor_expanded
@@ -202,6 +218,7 @@
    internal="epcs_flash_controller_0.external"
    type="conduit"
    dir="end" />
+ <interface name="i2c_0_ext" internal="i2c_0.i2c_serial" type="conduit" dir="end" />
  <interface
    name="pio_0_ext"
    internal="pio_0.external_connection"
@@ -240,6 +257,11 @@
   <parameter name="deviceFamilyString" value="Cyclone IV E" />
   <parameter name="resetrequest_enabled" value="true" />
   <parameter name="useASMIAtom" value="false" />
+ </module>
+ <module name="i2c_0" kind="altera_avalon_i2c" version="17.0" enabled="1">
+  <parameter name="FIFO_DEPTH" value="4" />
+  <parameter name="USE_AV_ST" value="0" />
+  <parameter name="clockRate" value="50000000" />
  </module>
  <module
    name="jtag_uart_0"
@@ -284,7 +306,7 @@
   <parameter name="dataAddrWidth" value="26" />
   <parameter name="dataMasterHighPerformanceAddrWidth" value="1" />
   <parameter name="dataMasterHighPerformanceMapParam" value="" />
-  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='nios2_qsys_0.debug_mem_slave' start='0x0' end='0x800' type='altera_nios2_gen2.debug_mem_slave' /><slave name='timer_0.s1' start='0x10000' end='0x10020' type='altera_avalon_timer.s1' /><slave name='jtag_uart_0.avalon_jtag_slave' start='0x30000' end='0x30008' type='altera_avalon_jtag_uart.avalon_jtag_slave' /><slave name='uart_0.s1' start='0x40000' end='0x40020' type='altera_avalon_uart.s1' /><slave name='spi_0.spi_control_port' start='0x50000' end='0x50020' type='altera_avalon_spi.spi_control_port' /><slave name='pio_0.s1' start='0x60000' end='0x60020' type='altera_avalon_pio.s1' /><slave name='epcs_flash_controller_0.epcs_control_port' start='0x70000' end='0x70800' type='altera_avalon_epcs_flash_controller.epcs_control_port' /><slave name='sdram_controller_0.s1' start='0x2000000' end='0x4000000' type='altera_avalon_new_sdram_controller.s1' /></address-map>]]></parameter>
+  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='nios2_qsys_0.debug_mem_slave' start='0x0' end='0x800' type='altera_nios2_gen2.debug_mem_slave' /><slave name='timer_0.s1' start='0x10000' end='0x10020' type='altera_avalon_timer.s1' /><slave name='i2c_0.csr' start='0x20000' end='0x20040' type='altera_avalon_i2c.csr' /><slave name='jtag_uart_0.avalon_jtag_slave' start='0x30000' end='0x30008' type='altera_avalon_jtag_uart.avalon_jtag_slave' /><slave name='uart_0.s1' start='0x40000' end='0x40020' type='altera_avalon_uart.s1' /><slave name='spi_0.spi_control_port' start='0x50000' end='0x50020' type='altera_avalon_spi.spi_control_port' /><slave name='pio_0.s1' start='0x60000' end='0x60020' type='altera_avalon_pio.s1' /><slave name='epcs_flash_controller_0.epcs_control_port' start='0x70000' end='0x70800' type='altera_avalon_epcs_flash_controller.epcs_control_port' /><slave name='sdram_controller_0.s1' start='0x2000000' end='0x4000000' type='altera_avalon_new_sdram_controller.s1' /></address-map>]]></parameter>
   <parameter name="data_master_high_performance_paddr_base" value="0" />
   <parameter name="data_master_high_performance_paddr_size" value="0" />
   <parameter name="data_master_paddr_base" value="0" />
@@ -330,7 +352,7 @@
   <parameter name="instruction_master_high_performance_paddr_size" value="0" />
   <parameter name="instruction_master_paddr_base" value="0" />
   <parameter name="instruction_master_paddr_size" value="0" />
-  <parameter name="internalIrqMaskSystemInfo" value="31" />
+  <parameter name="internalIrqMaskSystemInfo" value="63" />
   <parameter name="io_regionbase" value="0" />
   <parameter name="io_regionsize" value="0" />
   <parameter name="master_addr_map" value="false" />
@@ -572,6 +594,15 @@
    kind="avalon"
    version="17.0"
    start="nios2_qsys_0.data_master"
+   end="i2c_0.csr">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x00020000" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="17.0"
+   start="nios2_qsys_0.data_master"
    end="nios2_qsys_0.debug_mem_slave">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x0000" />
@@ -679,6 +710,14 @@
    start="clk_0.clk"
    end="epcs_flash_controller_0.clk" />
  <connection kind="clock" version="17.0" start="clk_0.clk" end="timer_0.clk" />
+ <connection kind="clock" version="17.0" start="clk_0.clk" end="i2c_0.clock" />
+ <connection
+   kind="interrupt"
+   version="17.0"
+   start="nios2_qsys_0.irq"
+   end="i2c_0.interrupt_sender">
+  <parameter name="irqNumber" value="5" />
+ </connection>
  <connection
    kind="interrupt"
    version="17.0"
@@ -764,6 +803,11 @@
    version="17.0"
    start="reset_controller_0.reset_out"
    end="timer_0.reset" />
+ <connection
+   kind="reset"
+   version="17.0"
+   start="reset_controller_0.reset_out"
+   end="i2c_0.reset_sink" />
  <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="HANDSHAKE" />
  <interconnectRequirement for="$system" name="qsys_mm.maxAdditionalLatency" value="1" />
 </system>

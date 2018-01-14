@@ -5,17 +5,18 @@ About NIOSDuino
 NIOSDuino is an adaptation of Arduino libraries which can run on a system
 built with QSys tool (formely SoPC Builder) from Quartus Prime. This
 enables Arduino code to be reused on Altera FPGA development boards and
-use Arduino-compatible 3.3V hardware modules (or shields) with these boards.
-Currently, Arduino modules with UART, SPI and plain diginal IO are supported.
-I2C and PWM support are planned. Analog channels are only possible with
-boards which have ADC, and their support is not planned as of yet.
+use Arduino-compatible hardware modules (or shields) with these boards.
+Currently, Arduino modules with UART, I2C SPI and plain diginal IO are
+supported. PWM support (aka `AnalogWrite()`) might be implemented in the
+near future. Analog channels (aka `AnalogRead()`) would require boards
+which have ADC, and their support is not planned as of yet.
 
 Getting started
 ---------------
 
 Here's a quickstart guide which should get you started if you have an FPGA
-board with SDRAM memory. If you're planning to purchase a dev board, consider
-reading the Hardware section below.
+board with SDRAM memory and EPCS flash. If you're planning to purchase a dev
+board, consider reading the Hardware section below.
 
 1. Install Quartus Prime with support package for your FPGA. I used version
 17.0 with a Cyclone IV IC (specifically, EP4CE10).
@@ -25,9 +26,9 @@ locations.
 
 3. Run Qsys tool and open nios_sdram.qsys. Remove EPCS controller if you
 don't have the serial flash chip or don't plan to use it as software storage.
-If you do, you will need to change the CPU reset location from EPCS to RAM.
-Generate the HDL (and the symbol, if you plan to use graphical schematic
-editor).
+If you do remove the EPCS controller, you will need to change the CPU reset
+location from EPCS to RAM. Generate the HDL (and the symbol, if you plan to
+use graphical schematic editor).
 
 4. Instantiate the generated system in your project and connect its outputs
 to FPGA pins. If your board has LEDs, connect one to PIO[13].
@@ -39,23 +40,30 @@ for the generated NIOS system (nios_sdram.sopcinfo). Use the "Altera HAL"
 type, not the RTOS one. Set the STDIN/STDOUT to jtag_uart_0, and timestamp
 and sys_clk timers to timer_0.
 
-7. Create a NIOS II Application project called nios_duino based on the BSP
-you just created. Add files from nios_duino folder to your project, keeping
-the folder structure. Then add a few settings to project properties:
+7. Create a NIOS II Application project based on the BSP you just created.
+Add files from nios_duino folder to your project, keeping the folder
+structure. Then add a few settings to project properties:
+
+ - ad `-std=gnu++11` to the compiler switches
 
  - add definitions: `__AVR__` and `ARDUINO=185` to C and C++ symbols
 
  - add "arduino" folder and folders of libraries you're going to use
 (e.g. "arduino/SPI/src") to C and C++ include directories
 
-8. Complile and run the nios_duino software. You should see the LED you've
-connected to PIO[13] blinking, and a timestamp should be printed to the
-Eclipse console every 2 seconds.
+The easiest way to do this is to edit the following lines in the Makefile:
+
+    ALT_INC_DIR= arduino arduino/Wire/src arduino/SPI/src
+    ALT_CPP_OPT= -std=gnu++11 -D__AVR__ -DARDUINO=185
+
+8. Complile and run the software. You should see the LED you've connected
+to PIO[13] blinking, and a timestamp should be printed to the Eclipse
+console every 2 seconds.
 
 Hardware
 --------
 
-Basically, what you need is a dev board with an FPGA capable of implementing
+NIOSDuino should run on any dev board with an FPGA capable of implementing
 a NIOS II CPU, enough on-board RAM to run the code, and enoug flash storage
 if you want your code to be persistent.
 
@@ -63,7 +71,7 @@ if you want your code to be persistent.
 It should also be possible to implement NIOS on a MAX 10 device, but you
 have to make sure the FPGA is big enough to support the CPU. Also check
 that the IO voltage supported by the FPGA is compatible with the hadware
-modules you have.
+modules you have. Typically, 3.3V modules should work fine.
 
 Note that older Cyclone II family is no logner supported by new versions
 of Quartus IDE, while older Quartus versions don't have the toolchain
@@ -105,16 +113,20 @@ cable is connected if you use free edition of Quartus.
 - SRAM/SDRAM controller. Unless your FPGA has 500kB of internal RAM or more
 you'll have to use whatever RAM you have on your dev board.
 
-- PIO, has to be named pio_0. This component can emulate the digital pins
-of Arduino, so it's required for pretty much anything. Be sure to configure
-it as Bidir, with bits which can be set/reset individually. Obviously, you
-will have as many pins as you have configured, with a max of 32.
+- PIO. This component can emulate the digital pins of Arduino, so it's
+required for pretty much anything. Be sure to configure it as Bidir,
+with bits which can be set/reset individually. Obviously, you will have
+as many pins as you have configured, with a max of 32.
 
-- UART and SPI controllers, have to be named spi_0, uart_0. These
-will be used to interact with hadware modules you want to connect to your
-dev board. It is recommended to make UART baud rate software-configurable.
-It should be possible to include several UARTs and easily integrate them
-in Arduino framework as `Serial1`, `Serial2`, etc.
+- UART, SPI and I2C controllers. These will be used to interact with
+hadware modules you want to connect to your dev board. It is recommended
+to make UART baud rate software-configurable. It should be possible to
+include several UARTs and easily integrate them in Arduino framework as
+`Serial1`, `Serial2`, etc.
+
+Note that I2C requires pull-up resistors on SDA and SCL pins to function.
+You may get away by enabling internal pull-ups in the FPGA, but it's
+recommended to solder actual 5-10kOhm resistors.
 
 - EPCS controller. You only need it if you plan to store your software in EPCS.
 [Here](https://www.altera.com/support/support-resources/knowledge-base/solutions/rd04112006_450.html)'s
@@ -126,17 +138,27 @@ STDIN/STDOUT.
 
 - Timer. This will enable time functions, such as `millis()` and `micros()`.
 
-Programming model
------------------
+Software
+--------
 
-Digital pins are accessible by index, starting from 0. That is,
-`digitalWrite(0, LOW)` will set PIO pin 0 to LOW.
+The goal of NIOSDuino is to allow Arduino sketches to run with minimum
+modifications or none at all. Usually, all you need to do is to rename
+the sketch file from *.ino to *.cpp and compile. Some sketches rely on
+the Arduino IDE preprocessing to access the necessary include files.
+Eclipse will not do that for you, so if you see errors when compiling your
+sketch, try adding the following to the beginning of the file:
+
+    #include <Arduino.h>
 
 Unlike actual AVR chips, QSys components don't share pins with each other.
 This means you can use all the PIO pins and SPI/UART modules in parallel.
 There's also no need to e.g. configure pin direction for SPI/UART pins.
 Note that existing libraries may still assume that shared pins are used, and
 configure them accordingly.
+
+Digital pins are accessible by index, starting from 0. That is,
+`digitalWrite(0, LOW)` will set PIO pin 0 to LOW.
+
 
 Hardware UARTs are accessible as `Serial0`, `Serial1`, etc. Only baudrate
 setting is taken into account in `SerialN.begin()`, bit settings have to be
@@ -156,3 +178,10 @@ SPI controller manages 3 pins - MISO, MOSI and CLK. SS signal is not used
 and should not be routed to FPGA pin. Arduino libraries typically expect
 the user to assign a regular diginal IO pin to be used as chipselect. As
 a result, transaction management mechanism of SPI controller is not used.
+
+I2C controller currently implements an ugly hack to get around a limitation
+of the HAL driver: when an empty (address-only) transfer is submitted to
+`endTransmission()`, an extra byte is transmitted before the stop sequence.
+This is notably required for I2C scanners to work, since they typically
+use zero-length transfers to detect I2C slaves.
+

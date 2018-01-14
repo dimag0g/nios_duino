@@ -25,7 +25,7 @@ extern "C" {
   #include <stdlib.h>
   #include <string.h>
   #include <inttypes.h>
-//!  #include "utility/twi.h"
+  #include <system.h>
 }
 
 #include "Wire.h"
@@ -49,6 +49,8 @@ void (*TwoWire::user_onReceive)(int);
 
 TwoWire::TwoWire()
 {
+	dev = alt_avalon_i2c_open(I2C_0_NAME);
+	if (NULL==dev) printf("Error: Cannot find %s\n", I2C_0_NAME);
 }
 
 // Public Methods //////////////////////////////////////////////////////////////
@@ -61,14 +63,17 @@ void TwoWire::begin(void)
   txBufferIndex = 0;
   txBufferLength = 0;
 
-  //!twi_init();
+  /*static const ALT_AVALON_I2C_MASTER_CONFIG_t cfg = {
+		  ALT_AVALON_I2C_ADDR_MODE_7_BIT,
+		  ALT_AVALON_I2C_SPEED_STANDARD,
+		  0xBE, 0x136, 0x5F
+  };
+  alt_avalon_i2c_disable(dev);
+  alt_avalon_i2c_master_config_set(dev, &cfg);*/
 }
 
 void TwoWire::begin(uint8_t address)
 {
-  //!twi_setAddress(address);
-	//!twi_attachSlaveTxEvent(onRequestService);
-	//!twi_attachSlaveRxEvent(onReceiveService);
   begin();
 }
 
@@ -79,7 +84,7 @@ void TwoWire::begin(int address)
 
 void TwoWire::end(void)
 {
-	//!twi_disable();
+	alt_avalon_i2c_disable(dev);
 }
 
 void TwoWire::setClock(uint32_t clock)
@@ -112,12 +117,13 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t quantity, uint32_t iaddres
     quantity = BUFFER_LENGTH;
   }
   // perform blocking read into buffer
-  uint8_t read = 0; //!twi_readFrom(address, rxBuffer, quantity, sendStop);
+  //!uint8_t read = twi_readFrom(address, rxBuffer, quantity, sendStop);
+  uint8_t ret = alt_avalon_i2c_master_receive(dev, rxBuffer, quantity, ALT_AVALON_I2C_NO_RESTART, sendStop);
   // set rx buffer iterator vars
   rxBufferIndex = 0;
-  rxBufferLength = read;
+  rxBufferLength = (ret==ALT_AVALON_I2C_SUCCESS) ? quantity : 0;
 
-  return read;
+  return rxBufferLength;
 }
 
 uint8_t TwoWire::requestFrom(uint8_t address, uint8_t quantity, uint8_t sendStop) {
@@ -148,6 +154,8 @@ void TwoWire::beginTransmission(uint8_t address)
   // reset tx buffer iterator vars
   txBufferIndex = 0;
   txBufferLength = 0;
+
+  alt_avalon_i2c_master_target_set(dev, address);
 }
 
 void TwoWire::beginTransmission(int address)
@@ -171,7 +179,10 @@ void TwoWire::beginTransmission(int address)
 uint8_t TwoWire::endTransmission(uint8_t sendStop)
 {
   // transmit buffer (blocking)
-  uint8_t ret = 0; //!twi_writeTo(txAddress, txBuffer, txBufferLength, 1, sendStop);
+  //! uint8_t ret = twi_writeTo(txAddress, txBuffer, txBufferLength, 1, sendStop);
+  if(txBufferLength == 0) txBufferLength = 1; // ugly hack to allow i2c scanners to use address-only transfers
+  uint8_t ret = alt_avalon_i2c_master_transmit(dev, txBuffer, txBufferLength, ALT_AVALON_I2C_NO_RESTART, sendStop);
+
   // reset tx buffer iterator vars
   txBufferIndex = 0;
   txBufferLength = 0;
@@ -206,9 +217,7 @@ size_t TwoWire::write(uint8_t data)
     // update amount in buffer   
     txBufferLength = txBufferIndex;
   }else{
-  // in slave send mode
-    // reply to master
-	  //!twi_transmit(&data, 1);
+	  // slave mode not supported
   }
   return 1;
 }
@@ -224,9 +233,7 @@ size_t TwoWire::write(const uint8_t *data, size_t quantity)
       write(data[i]);
     }
   }else{
-  // in slave send mode
-    // reply to master
-	  //!twi_transmit(data, quantity);
+	  // slave mode not supported
   }
   return quantity;
 }
