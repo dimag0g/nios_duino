@@ -25,14 +25,19 @@
 //! NIOSDuino custom file, (c) Dmitry Grigoryev, 2018
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
 #include "Arduino.h"
 #include <altera_avalon_uart_regs.h>
 #include <altera_avalon_uart.h>
-
+#include <altera_avalon_uart_fd.h>
+//extern int altera_avalon_uart_read(altera_avalon_uart_state* sp, char* ptr, int len, int flags);
+//extern int altera_avalon_uart_write(altera_avalon_uart_state* sp, const char* ptr, int len, int flags);
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
 #include "HardwareSerial.h"
+
 
 
 
@@ -43,12 +48,13 @@ void HardwareSerial::begin(unsigned long baud, byte config)
 {
   alt_u32 divisor = (UART_0_FREQ/baud)-1;
   IOWR_ALTERA_AVALON_UART_DIVISOR(UART_0_BASE, divisor);
-   fp = fopen(UART_0_NAME, "r+");
+   //fp = fopen(UART_0_NAME, "r+");
+  fd = ::open(devname, 0);
 }
 
 void HardwareSerial::end()
 {
-  fclose(fp);
+  //fclose(fp);
 }
 
 int HardwareSerial::available(void)
@@ -63,7 +69,10 @@ int HardwareSerial::peek(void)
 
 int HardwareSerial::read(void)
 {
-  return fgetc(fp);
+	char c;
+	::read(fd, &c, 1);
+	return (unsigned char)c;
+  //return fgetc(fp);
 }
 
 int HardwareSerial::availableForWrite(void)
@@ -73,12 +82,13 @@ int HardwareSerial::availableForWrite(void)
 
 void HardwareSerial::flush()
 {
-  fflush(fp);
+  //fflush(fp);
 }
 
 size_t HardwareSerial::write(uint8_t c)
 {
-  return fputc(c, fp);
+	return ::write(fd, (char *)&c, 1);
+  //return fputc(c, fp);
 }
 
 #endif // whole file

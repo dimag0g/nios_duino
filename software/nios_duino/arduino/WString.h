@@ -194,8 +194,8 @@ public:
 
 	// parsing/conversion
 	long toInt(void) const;
-	float toFloat(void) const;
-	double toDouble(void) const;
+	float toFloat(void) const  __attribute__((deprecated("uncomment the call to atof and use a normal C library")));
+	double toDouble(void) const  __attribute__((deprecated("uncomment the call to atof and use a normal C library")));
 
 protected:
 	char *buffer;	        // the actual char array

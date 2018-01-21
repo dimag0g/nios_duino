@@ -25,7 +25,7 @@
 #define HardwareSerial_h
 
 #include <inttypes.h>
-#include <stdio.h>
+//#include <altera_avalon_uart.h>
 #include "Stream.h"
 #include <system.h>
 
@@ -58,9 +58,12 @@
 class HardwareSerial : public Stream
 {
   protected:
-    FILE *fp; //!
+	//altera_avalon_uart_state *st; //!
+	//FILE * fp;
+	int fd;
+    const char *devname;
   public:
-    inline HardwareSerial() {fp=NULL;} //!
+    inline HardwareSerial(const char *name) {devname = name; fd = 0;} //!
     void begin(unsigned long baud) { begin(baud, SERIAL_8N1); }
     void begin(unsigned long, uint8_t);
     void end();

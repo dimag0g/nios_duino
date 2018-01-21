@@ -25,7 +25,9 @@
 #include "Arduino.h"
 
 #include "GenericSerial.h"
-#include <sys/alt_stdio.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
 
 void GenericSerial::begin(unsigned long baud, byte config)
 {
@@ -49,7 +51,9 @@ int GenericSerial::peek(void)
 
 int GenericSerial::read(void)
 {
-  //return alt_getchar();
+	char c;
+	::read(0, &c, 1);
+	return (unsigned char)c;
 }
 
 int GenericSerial::availableForWrite(void)
@@ -66,8 +70,8 @@ void GenericSerial::flush()
 
 size_t GenericSerial::write(uint8_t c)
 {
-  fputc(c, stderr);
-  return alt_putchar(c);
+	::write(2, (char *)&c, 1);
+	return ::write(1, (char *)&c, 1);
 }
 
 GenericSerial Serial;

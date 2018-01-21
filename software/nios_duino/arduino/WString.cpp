@@ -20,6 +20,7 @@
 */
 
 #include "WString.h"
+#include "sys/alt_warning.h"
 
 /*********************************************/
 /*  Constructors                             */
@@ -740,11 +741,13 @@ long String::toInt(void) const
 
 float String::toFloat(void) const
 {
-	return float(toDouble());
+	//! if (buffer) return float(atof(buffer));
+    return 0;
 }
+
 
 double String::toDouble(void) const
 {
-	if (buffer) return atof(buffer);
+	//! if (buffer) return atof(buffer);
 	return 0;
 }

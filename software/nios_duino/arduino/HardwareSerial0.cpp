@@ -36,7 +36,9 @@
 // first place.
 
 #if defined(HAVE_HWSERIAL0)
-  HardwareSerial Serial0;
+//extern altera_avalon_uart_state uart_0;
+
+  HardwareSerial Serial0(UART_0_NAME);
 
 // Function that can be weakly referenced by serialEventRun to prevent
 // pulling in this file if it's not otherwise used.
