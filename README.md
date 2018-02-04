@@ -8,53 +8,59 @@ enables Arduino code to be reused on Altera FPGA development boards and
 use Arduino-compatible hardware modules (or shields) with these boards.
 Currently, Arduino modules with UART, I2C SPI and plain diginal IO are
 supported. PWM support (aka `AnalogWrite()`) might be implemented in the
-near future. Analog channels (aka `AnalogRead()`) would require boards
-which have ADC, and their support is not planned as of yet.
+future. Analog channels (aka `AnalogRead()`) would require boards
+which have ADC, and their support is not planned as of yet. Internal EEPROM
+is currently simulated with a 1KB RAM block, but it might be implemented
+using EPCS/EPCQ EEPROM which is present virtually on all Altera FPGA boards.
 
 Getting started
 ---------------
 
 Here's a quickstart guide which should get you started if you have an FPGA
-board with SDRAM memory and EPCS flash. If you're planning to purchase a dev
-board, consider reading the Hardware section below.
+board with optional SDRAM memory and EPCS flash. If you're planning to
+purchase a dev board, consider reading the Hardware section below.
 
 1. Install Quartus Prime with support package for your FPGA. I used version
 17.0 with a Cyclone IV IC (specifically, EP4CE10).
 
-2. Create/open a project with clock, reset and RAM pins assigned to correct
-locations.
+2. Create/open a project with clock, reset, EPCS and SDRAM (if you have SDRAM)
+pins assigned to correct locations.
 
-3. Run Qsys tool and open nios_sdram.qsys. Remove EPCS controller if you
-don't have the serial flash chip or don't plan to use it as software storage.
-If you do remove the EPCS controller, you will need to change the CPU reset
-location from EPCS to RAM. Generate the HDL (and the symbol, if you plan to
-use graphical schematic editor).
+3. Run Qsys tool and open nios_sdram.qsys (if you plan to use SDRAM) or
+nios_onchip.qsys (if'll be using internal RAM). Generate the HDL (and the
+symbol, if you plan to use graphical schematic editor).
 
 4. Instantiate the generated system in your project and connect its outputs
 to FPGA pins. If your board has LEDs, connect one to PIO[13].
 
 5. Build the project and program the FPGA.
 
-6. Open the NIOS II Eclipse IDE. Create a BSP (board support package) project
-for the generated NIOS system (nios_sdram.sopcinfo). Use the "Altera HAL"
-type, not the RTOS one. Set the STDIN/STDOUT to jtag_uart_0, and timestamp
-and sys_clk timers to timer_0.
+6. Open the NIOS II Eclipse IDE. Create a BSP (board support package) and
+NIOS II application project from template. If you have less than 100KB of RAM
+(typically, when using on-chip memory), pick "Hello world small" as a base,
+otherwise pick regular "Hello world".  Set the STDIN/STDOUT to jtag_uart_0,
+and timestamp and sys_clk timers to timer_0. Additionally, if you have picked
+"Hello world small", go to BSP advanced settings and enable C++ support.
 
-7. Create a NIOS II Application project based on the BSP you just created.
-Add files from nios_duino folder to your project, keeping the folder
-structure. Then add a few settings to project properties:
 
- - ad `-std=gnu++11` to the compiler switches
+7. In the NIOS II Application project, remove hello_world.c file, and
+add files from nios_duino folder, keeping the folder structure. Then add
+a few settings to project properties:
+
+ - add `-std=gnu++11` to the compiler switches
 
  - add definitions: `__AVR__` and `ARDUINO=185` to C and C++ symbols
 
  - add "arduino" folder and folders of libraries you're going to use
 (e.g. "arduino/SPI/src") to C and C++ include directories
 
+ - enable dead code elimination with -ffunction-sections and -gc-sections
+
 The easiest way to do this is to edit the following lines in the Makefile:
 
     ALT_INC_DIR= arduino arduino/Wire/src arduino/SPI/src
-    ALT_CPP_OPT= -std=gnu++11 -D__AVR__ -DARDUINO=185
+    ALT_CPP_OPT= -std=gnu++11 -D__AVR__ -DARDUINO=185 -ffunction-sections
+    ALT_LINK_OPT= -wl,-gc-sections
 
 8. Complile and run the software. You should see the LED you've connected
 to PIO[13] blinking, and a timestamp should be printed to the Eclipse
@@ -67,7 +73,8 @@ NIOSDuino should run on any dev board with an FPGA capable of implementing
 a NIOS II CPU, enough on-board RAM to run the code, and enoug flash storage
 if you want your code to be persistent.
 
-- FPGA - Ideally, you'll need any IC of Cyclone, Stratix or Arria families.
+- FPGA - Ideally, you'll need any IC of Cyclone, or Arria families.
+Stratix is even more powerful, but requires a commercial Quartus license.
 It should also be possible to implement NIOS on a MAX 10 device, but you
 have to make sure the FPGA is big enough to support the CPU. Also check
 that the IO voltage supported by the FPGA is compatible with the hadware
@@ -81,17 +88,21 @@ was decided it's not worth the effort, so Cyclone II is not supported.
 
 - RAM - NIOSDuino requires much more RAM than Arduino. Unless you have flash
 which supports code execution, all program code will have to reside in RAM,
-plus there's a lot of overhead in using POSIX functions to mimic the AVR
-library. Depending on the libraries you will use, you should expect as much
-as 500 kB of RAM to be required. Luckily, most FPGA boards come with at least
-several MB of SRAM, or tens of MB of SDRAM.
+plus there's a lot of overhead in using HAL functions to mimic the AVR
+library. When using small C library and optimization (-O3 or -Os), a typical
+Arduino program should fit into ~64KB. With standard C library and light
+optimization (-01) you will need 128KB or more.
+
+If you have an FPGA with 500 kbit of internal memory or more, you can try
+on-chip RAM, which is significanly faster than pretty much any off-chip
+solution, unless you implement cache. Many FPGA boards come with external
+SRAM or SDRAM, which will offer you much more flexibility.
 
 - Flash - The typical solution present on Altera dev boards is to use the same
-EPCS serial flash chip for FPGA configuration and program storage. Note that
-serial flash cannot be used as code ROM - EPCS component provides a bootloader
-which reads the contents of the flash in the RAM and executes the code from
-there. Unless you have a NOR flash, you will still need the same amount of RAM
-to run your code.
+EPCS serial flash chip for FPGA configuration and program storage. Typically,
+you don't want to execute code from flash, which is slow and cannot be
+programmed by the debugger. Rather, you will want to use a "boot copier" which
+copies flash contents into RAM on a reset, and run the code from RAM.
 
 Cheaper dev boards come with EPCS4 chip which only provides 512kB of storage
 shared between the FPGA configuration data and the software, so it will
@@ -101,10 +112,10 @@ your code on the board.
 SoPC
 ----
 
-This project includes a sample SoPC system (nios_sdram.qsys) which should
-suit most boards with SDRAM and EPCS flash. In case you need to customize
-the SoPC, here's a description of components which should/could be included
-in the QSys system to be supported by NIOSDuino:
+This project includes a sample SoPC system (nios_sdram.qsys/nios_onchip.qsys)
+which should suit most boards. In case you need to customize the SoPC, here's
+a description of components which should/could be included in the QSys system
+to be supported by NIOSDuino:
 
 - NIOS CPU. Only the "tiny" variety is available without restrictions,
 bigger varieties will be either time-limited or only work while the JTAG
@@ -131,7 +142,11 @@ recommended to solder actual 5-10kOhm resistors.
 - EPCS controller. You only need it if you plan to store your software in EPCS.
 [Here](https://www.altera.com/support/support-resources/knowledge-base/solutions/rd04112006_450.html)'s
 an article describing how to program the EPCS device with FPGA SOF file and
-software ELF file simultaneously.
+software ELF file simultaneously. You don't need to manually type type these
+commands, NIOS Flash programmer will do that for you.
+
+If you don't want to use EPCS controller, you can remove it from the system.
+Don't forget to update the CPU reset vectors if you do.
 
 - JTAG UART, 16x2 LCD or any other compoment which can be selected as
 STDIN/STDOUT.
@@ -150,6 +165,9 @@ sketch, try adding the following to the beginning of the file:
 
     #include <Arduino.h>
 
+Also make sure you declare all your functions which are called from `setup()`
+and `loop()` before they are used.
+
 Unlike actual AVR chips, QSys components don't share pins with each other.
 This means you can use all the PIO pins and SPI/UART modules in parallel.
 There's also no need to e.g. configure pin direction for SPI/UART pins.
@@ -157,8 +175,9 @@ Note that existing libraries may still assume that shared pins are used, and
 configure them accordingly.
 
 Digital pins are accessible by index, starting from 0. That is,
-`digitalWrite(0, LOW)` will set PIO pin 0 to LOW.
-
+`digitalWrite(0, LOW)` will set PIO pin 0 to LOW. Macros like
+`digitalPinToPort()` are also provided, but remember to update port
+data types from `uint8_t` to `uint32_t`.
 
 Hardware UARTs are accessible as `Serial0`, `Serial1`, etc. Only baudrate
 setting is taken into account in `SerialN.begin()`, bit settings have to be
@@ -184,4 +203,3 @@ of the HAL driver: when an empty (address-only) transfer is submitted to
 `endTransmission()`, an extra byte is transmitted before the stop sequence.
 This is notably required for I2C scanners to work, since they typically
 use zero-length transfers to detect I2C slaves.
-

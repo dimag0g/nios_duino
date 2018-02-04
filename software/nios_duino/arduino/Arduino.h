@@ -29,9 +29,12 @@
 #include <math.h>
 #include <sys/alt_timestamp.h>
 
+#include <system.h> //! pin to port/mask stuff
+#include <io.h>
+
 #include <avr/pgmspace.h>
-//!#include <avr/io.h>
-//!#include <avr/interrupt.h>
+#include <avr/io.h>
+#include <avr/interrupt.h>
 
 #include "binary.h"
 
@@ -143,12 +146,15 @@ void analogWrite(uint8_t, int);
 
 #define millis() (clock())       //! implement time functions using sys/time.h
 #define micros() (clock()*1000)  //(alt_timestamp()/(TIMER_0_FREQ/1000000))
+
 // usleep() is based on busy-waiting, so it only works correctly
 // when running from on-chip memory. External SRAM/SDRAM adds delays
 // for each fetch/execute operation, making the CPU almost
 // 4 times slower in my case. YMMV.
 #define delay(t) usleep((t)*265) //! multiply by 0.265 to account for memory delays
 #define delayMicroseconds(t) usleep(((t)>>2)+((t)>>6)) //! 0.265 implemented with shifts
+//#define delay(t) usleep((t)*1000)
+//#define delayMicroseconds(t) usleep(t)
 
 
 unsigned long pulseIn(uint8_t pin, uint8_t state, unsigned long timeout);
@@ -170,28 +176,29 @@ void loop(void);
 
 // On the ATmega1280, the addresses of some of the port registers are
 // greater than 255, so we can't store them in uint8_t's.
-extern const uint16_t PROGMEM port_to_mode_PGM[];
-extern const uint16_t PROGMEM port_to_input_PGM[];
-extern const uint16_t PROGMEM port_to_output_PGM[];
+//!extern const uint16_t PROGMEM port_to_mode_PGM[];
+//!extern const uint16_t PROGMEM port_to_input_PGM[];
+//!extern const uint16_t PROGMEM port_to_output_PGM[];
 
-extern const uint8_t PROGMEM digital_pin_to_port_PGM[];
+//!extern const uint8_t PROGMEM digital_pin_to_port_PGM[];
 // extern const uint8_t PROGMEM digital_pin_to_bit_PGM[];
-extern const uint8_t PROGMEM digital_pin_to_bit_mask_PGM[];
-extern const uint8_t PROGMEM digital_pin_to_timer_PGM[];
+//!extern const uint8_t PROGMEM digital_pin_to_bit_mask_PGM[];
+//!extern const uint8_t PROGMEM digital_pin_to_timer_PGM[];
 
 // Get the bit location within the hardware port of the given virtual pin.
 // This comes from the pins_*.c file for the active board configuration.
 // 
 // These perform slightly better as macros compared to inline functions
 //
-#define digitalPinToPort(P) ( pgm_read_byte( digital_pin_to_port_PGM + (P) ) )
-#define digitalPinToBitMask(P) ( pgm_read_byte( digital_pin_to_bit_mask_PGM + (P) ) )
-#define digitalPinToTimer(P) ( pgm_read_byte( digital_pin_to_timer_PGM + (P) ) )
+//*
+#define digitalPinToPort(P) (0)
+#define digitalPinToBitMask(P) (1<<P)
+#define digitalPinToTimer(P) (0)
 #define analogInPinToBit(P) (P)
-#define portOutputRegister(P) ( (volatile uint8_t *)( pgm_read_word( port_to_output_PGM + (P))) )
-#define portInputRegister(P) ( (volatile uint8_t *)( pgm_read_word( port_to_input_PGM + (P))) )
-#define portModeRegister(P) ( (volatile uint8_t *)( pgm_read_word( port_to_mode_PGM + (P))) )
-
+#define portOutputRegister(P) ( (alt_u32*)(PIO_0_BASE) )
+#define portInputRegister(P) ( (alt_u32*)(PIO_0_BASE) )
+#define portModeRegister(P) ( (alt_u32*)(PIO_0_BASE) + SYSTEM_BUS_WIDTH/32 )
+//*/
 #define NOT_A_PIN 0
 #define NOT_A_PORT 0
 
