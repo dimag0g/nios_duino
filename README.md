@@ -27,7 +27,7 @@ purchase a dev board, consider reading the Hardware section below.
 pins assigned to correct locations.
 
 3. Run Qsys tool and open nios_sdram.qsys (if you plan to use SDRAM) or
-nios_onchip.qsys (if'll be using internal RAM). Generate the HDL (and the
+nios_onchip.qsys (if you'll be using internal RAM). Generate the HDL (and the
 symbol, if you plan to use graphical schematic editor).
 
 4. Instantiate the generated system in your project and connect its outputs
@@ -54,13 +54,14 @@ a few settings to project properties:
  - add "arduino" folder and folders of libraries you're going to use
 (e.g. "arduino/SPI/src") to C and C++ include directories
 
- - enable dead code elimination with -ffunction-sections and -gc-sections
+ - enable dead code elimination with `-ffunction-sections` and `--gc-sections`
 
 The easiest way to do this is to edit the following lines in the Makefile:
 
-    ALT_INC_DIR= arduino arduino/Wire/src arduino/SPI/src
-    ALT_CPP_OPT= -std=gnu++11 -D__AVR__ -DARDUINO=185 -ffunction-sections
-    ALT_LINK_OPT= -wl,-gc-sections
+    ALT_INCLUDE_DIRS := arduino arduino/Wire/src arduino/SPI/src
+    ALT_CXXFLAGS := -std=gnu++11
+    ALT_CPPFLAGS := -D__AVR__ -DARDUINO=185 -ffunction-sections
+    ALT_LDFLAGS := -Wl,--gc-sections
 
 8. Complile and run the software. You should see the LED you've connected
 to PIO[13] blinking, and a timestamp should be printed to the Eclipse
@@ -167,6 +168,11 @@ sketch, try adding the following to the beginning of the file:
 
 Also make sure you declare all your functions which are called from `setup()`
 and `loop()` before they are used.
+
+Additional libraries you'd like to use should be copied to your projec folder.
+Then you'll have to update the Makefile to include new header files locatons
+to `ALT_INCLUDE_DIRS` and new rules to build the *.cpp files (which is done
+by right-clicking on your Eclipse project and selecting "Refresh").
 
 Unlike actual AVR chips, QSys components don't share pins with each other.
 This means you can use all the PIO pins and SPI/UART modules in parallel.
