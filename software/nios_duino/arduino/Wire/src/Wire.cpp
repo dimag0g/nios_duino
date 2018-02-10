@@ -42,6 +42,7 @@ uint8_t TwoWire::txBufferIndex = 0;
 uint8_t TwoWire::txBufferLength = 0;
 
 uint8_t TwoWire::transmitting = 0;
+uint8_t TwoWire::restart = ALT_AVALON_I2C_NO_RESTART;
 void (*TwoWire::user_onRequest)(void);
 void (*TwoWire::user_onReceive)(int);
 
@@ -118,7 +119,9 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t quantity, uint32_t iaddres
   }
   // perform blocking read into buffer
   //!uint8_t read = twi_readFrom(address, rxBuffer, quantity, sendStop);
-  uint8_t ret = alt_avalon_i2c_master_receive(dev, rxBuffer, quantity, ALT_AVALON_I2C_NO_RESTART, sendStop);
+  uint8_t ret = alt_avalon_i2c_master_receive(dev, rxBuffer, quantity, restart, sendStop);
+  restart = !sendStop;
+
   // set rx buffer iterator vars
   rxBufferIndex = 0;
   rxBufferLength = (ret==ALT_AVALON_I2C_SUCCESS) ? quantity : 0;
@@ -181,7 +184,8 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
   // transmit buffer (blocking)
   //! uint8_t ret = twi_writeTo(txAddress, txBuffer, txBufferLength, 1, sendStop);
   if(txBufferLength == 0) txBufferLength = 1; // ugly hack to allow i2c scanners to use address-only transfers
-  uint8_t ret = alt_avalon_i2c_master_transmit(dev, txBuffer, txBufferLength, ALT_AVALON_I2C_NO_RESTART, sendStop);
+  uint8_t ret = alt_avalon_i2c_master_transmit(dev, txBuffer, txBufferLength, restart, sendStop);
+  restart = !sendStop;
 
   // reset tx buffer iterator vars
   txBufferIndex = 0;

@@ -49,6 +49,7 @@ class TwoWire : public Stream
     static uint8_t txBufferLength;
 
     static uint8_t transmitting;
+    static uint8_t restart;
     static void (*user_onRequest)(void);
     static void (*user_onReceive)(int);
     static void onRequestService(void);

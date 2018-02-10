@@ -29,6 +29,8 @@
 #include <math.h>
 #include <sys/alt_timestamp.h>
 
+#include <sys/alt_irq.h> //! IRQ enable/disable
+
 #include <system.h> //! pin to port/mask stuff
 #include <io.h>
 
@@ -49,7 +51,7 @@ void yield(void);
 
 #define INPUT 0x0
 #define OUTPUT 0x1
-#define INPUT_PULLUP 0x2
+#define INPUT_PULLUP INPUT //! 0x2
 
 #define PI 3.1415926535897932384626433832795
 #define HALF_PI 1.5707963267948966192313216916398
@@ -105,8 +107,10 @@ void yield(void);
 #define degrees(rad) ((rad)*RAD_TO_DEG)
 #define sq(x) ((x)*(x))
 
-#define interrupts() while(0) //!sei()
-#define noInterrupts() while(0) //!cli()
+#define interrupts()   do { alt_irq_context c; NIOS2_READ_STATUS (c); NIOS2_WRITE_STATUS (c | NIOS2_STATUS_PIE_MSK); } while(0) //!sei()
+#define noInterrupts() do { alt_irq_context c; NIOS2_READ_STATUS (c); NIOS2_WRITE_STATUS (c & ~NIOS2_STATUS_PIE_MSK); } while(0) //!cli()
+
+#define F_CPU (ALT_CPU_FREQ/6) // to be calibrated!
 
 #define clockCyclesPerMicrosecond() ( F_CPU / 1000000L )
 #define clockCyclesToMicroseconds(a) ( (a) / clockCyclesPerMicrosecond() )
@@ -151,8 +155,8 @@ void analogWrite(uint8_t, int);
 // when running from on-chip memory. External SRAM/SDRAM adds delays
 // for each fetch/execute operation, making the CPU almost
 // 4 times slower in my case. YMMV.
-#define delay(t) usleep((t)*265) //! multiply by 0.265 to account for memory delays
-#define delayMicroseconds(t) usleep(((t)>>2)+((t)>>6)) //! 0.265 implemented with shifts
+#define delay(t) usleep((t)*250) //! multiply by 0.25 to account for memory delays
+#define delayMicroseconds(t) usleep((t)>>2) //! 0.25 implemented with shifts
 //#define delay(t) usleep((t)*1000)
 //#define delayMicroseconds(t) usleep(t)
 
@@ -195,9 +199,9 @@ void loop(void);
 #define digitalPinToBitMask(P) (1<<P)
 #define digitalPinToTimer(P) (0)
 #define analogInPinToBit(P) (P)
-#define portOutputRegister(P) ( (alt_u32*)(PIO_0_BASE) )
-#define portInputRegister(P) ( (alt_u32*)(PIO_0_BASE) )
-#define portModeRegister(P) ( (alt_u32*)(PIO_0_BASE) + SYSTEM_BUS_WIDTH/32 )
+#define portOutputRegister(P) (  (volatile alt_u32*)(PIO_0_BASE) )
+#define portInputRegister(P) ( (volatile alt_u32*)(PIO_0_BASE) )
+#define portModeRegister(P) ( (volatile alt_u32*)(PIO_0_BASE + SYSTEM_BUS_WIDTH/32) )
 //*/
 #define NOT_A_PIN 0
 #define NOT_A_PORT 0
