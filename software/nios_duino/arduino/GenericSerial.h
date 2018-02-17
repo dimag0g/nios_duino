@@ -29,10 +29,11 @@
 
 class GenericSerial : public Stream
 {
-
+private:
+	int next_char;
 
   public:
-    inline GenericSerial() {};
+    inline GenericSerial() {next_char = -1; };
     void begin(unsigned long baud) { begin(baud, 0); }
     void begin(unsigned long, uint8_t);
     void end();

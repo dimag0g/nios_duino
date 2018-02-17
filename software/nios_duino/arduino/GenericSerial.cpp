@@ -29,31 +29,40 @@
 #include <sys/types.h>
 #include <fcntl.h>
 
+extern alt_fd alt_fd_list[];
+
 void GenericSerial::begin(unsigned long baud, byte config)
 {
-
+	alt_fd_list[0].fd_flags = O_NONBLOCK; // set non-blocking mode for STDIN, to allow peek()
 }
 
 void GenericSerial::end()
 {
-  flush();
+	flush();
 }
 
 int GenericSerial::available(void)
 {
-  return 1;
+	return (peek() != -1);
 }
 
 int GenericSerial::peek(void)
 {
-  return -1;
+	if(next_char == -1) {
+		unsigned char c;
+		if(::read(0, &c, 1) == 1) next_char = c;
+	}
+	return next_char;
 }
 
 int GenericSerial::read(void)
 {
-	char c;
-	::read(0, &c, 1);
-	return (unsigned char)c;
+	unsigned char c;
+	if(next_char != -1) {
+		c = next_char;
+		next_char = -1;
+	} else while(::read(0, &c, 1) == 1);
+	return c;
 }
 
 int GenericSerial::availableForWrite(void)
