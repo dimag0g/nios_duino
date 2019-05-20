@@ -2,10 +2,10 @@
 About NIOSDuino
 ---------------
 
-NIOSDuino is an adaptation of Arduino libraries which can run on a system
+NIOSDuino is an adaptation of Arduino core libraries which run on a system
 built with QSys tool (formely SoPC Builder) from Quartus Prime. This
 enables Arduino code to be reused on Altera FPGA development boards and
-use Arduino-compatible hardware modules (or shields) with these boards.
+the Arduino hardware modules (or shields) to be used with FPGA boards.
 Currently, Arduino modules with UART, I2C SPI and plain diginal IO are
 supported.
 
@@ -40,7 +40,7 @@ to FPGA pins. If your board has LEDs, connect one to PIO[13].
 NIOS II application project from template. If you have less than 100KB of RAM
 (typically, when using on-chip memory), pick "Hello world small" as a base,
 otherwise pick regular "Hello world".  Set the STDIN/STDOUT to jtag_uart_0,
-and timestamp and sys_clk timers to timer_0. Additionally, if you have picked
+and sys_clk timer to timer_0. Additionally, if you have picked
 "Hello world small", go to BSP advanced settings and enable C++ support.
 
 
@@ -66,7 +66,8 @@ The easiest way to do this is to edit the following lines in the Makefile:
 
 8. Complile and run the software. You should see the LED you've connected
 to PIO[13] blinking, and a timestamp should be printed to the Eclipse
-console every 2 seconds.
+console every ~2 seconds. Use this timestamp to calibrate the `delay()` and
+`delayMicroseconds()` macros so that `delay(1000)` corresponds to one second.
 
 Hardware
 --------
@@ -173,40 +174,41 @@ sketch, try adding the following to the beginning of the file:
 Also make sure you declare all your functions which are called from `setup()`
 and `loop()` before they are used.
 
-Additional libraries you'd like to use should be copied to your projec folder.
+Additional libraries you'd like to use should be copied to your project folder.
 Then you'll have to update the Makefile to include new header files locatons
 to `ALT_INCLUDE_DIRS` and new rules to build the *.cpp files (which is done
 by right-clicking on your Eclipse project and selecting "Refresh").
 
 Unlike actual AVR chips, QSys components don't share pins with each other.
 This means you can use all the PIO pins and SPI/UART modules in parallel.
-There's also no need to e.g. configure pin direction for SPI/UART pins.
+There's also no need to e.g. configure the direction for SPI/UART pins.
 Note that existing libraries may still assume that shared pins are used, and
 configure them accordingly.
 
 Digital pins are accessible by index, starting from 0. That is,
 `digitalWrite(0, LOW)` will set PIO pin 0 to LOW. Macros like
-`digitalPinToPort()` are also provided, but remember to update port
-data types from `uint8_t` to `uint32_t`.
+`digitalPinToPort()` and `portOutputRegister()` are also provided,
+but remember to update port data types from `uint8_t` to `uint32_t`.
 
-Hardware UARTs are accessible as `Serial0`, `Serial1`, etc. Only baudrate
+Hardware UARTs are accessible as `Serial0`, `Serial1`, etc. Only the baudrate
 setting is taken into account in `SerialN.begin()`, bit settings have to be
 configured in QSys and cannot be changed at runtime.
 
-Serial is reserved to be whatever component you chose as STDIN/STDOUT,
-which can be a UART, a JTAG UART or even an LCD. Obviously, any baudrate
-or bit settings given in `Serial.begin()` are ignored. If a UART is to be
-used in a sketch which refers to `Serial`, it is recommended to
+`Serial` is whatever component you chose as STDIN/STDOUT,
+which can be a UART, a JTAG UART (default) or even an LCD. Obviously, any
+baudrate or bit settings given in `Serial.begin()` are ignored for non-UART
+hardware. If a hardware UART is to be used in a sketch which refers to `Serial`,
+and you don't want to reconfigure STDIN/STDOUT, you can
 
     #define Serial Serial0
 
 Note that the same UART should not be used as STDIN/STDOUT and as `SerialN`
 device at the same time.
 
-SPI controller manages 3 pins - MISO, MOSI and CLK. SS signal is not used
-and should not be routed to FPGA pin. Arduino libraries typically expect
-the user to assign a regular diginal IO pin to be used as chipselect. As
-a result, transaction management mechanism of SPI controller is not used.
+SPI controller manages 3 pins - MISO, MOSI and CLK. Chipselect signal (SS or CS)
+is not used and should not be routed to an FPGA pin. Arduino libraries typically
+expect the user to assign a regular diginal IO pin to be used as chipselect.
+As a consequence, transaction management mechanism of SPI controller is not used.
 
 I2C controller currently implements an ugly hack to get around a limitation
 of the HAL driver: when an empty (address-only) transfer is submitted to
