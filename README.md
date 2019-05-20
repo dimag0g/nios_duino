@@ -7,11 +7,12 @@ built with QSys tool (formely SoPC Builder) from Quartus Prime. This
 enables Arduino code to be reused on Altera FPGA development boards and
 use Arduino-compatible hardware modules (or shields) with these boards.
 Currently, Arduino modules with UART, I2C SPI and plain diginal IO are
-supported. PWM support (aka `AnalogWrite()`) might be implemented in the
-future. Analog channels (aka `AnalogRead()`) would require boards
-which have ADC, and their support is not planned as of yet. Internal EEPROM
-is currently simulated with a 1KB RAM block, but it might be implemented
-using EPCS/EPCQ EEPROM which is present virtually on all Altera FPGA boards.
+supported.
+
+What is *not* implemented:
+ - PWM support (aka `AnalogWrite()`)
+ - Analog channels (aka `AnalogRead()`)
+ - Internal EEPROM is currently simulated with a 1KB RAM block
 
 Getting started
 ---------------
@@ -79,7 +80,8 @@ Stratix is even more powerful, but requires a commercial Quartus license.
 It should also be possible to implement NIOS on a MAX 10 device, but you
 have to make sure the FPGA is big enough to support the CPU. Also check
 that the IO voltage supported by the FPGA is compatible with the hadware
-modules you have. Typically, 3.3V modules should work fine.
+modules you have. Typically, 3.3V modules work fine with FPGAs which
+support 3.3V IO.
 
 Note that older Cyclone II family is no logner supported by new versions
 of Quartus IDE, while older Quartus versions don't have the toolchain
@@ -94,16 +96,18 @@ library. When using small C library and optimization (-O3 or -Os), a typical
 Arduino program should fit into ~64KB. With standard C library and light
 optimization (-01) you will need 128KB or more.
 
-If you have an FPGA with 500 kbit of internal memory or more, you can try
-on-chip RAM, which is significanly faster than pretty much any off-chip
-solution, unless you implement cache. Many FPGA boards come with external
-SRAM or SDRAM, which will offer you much more flexibility.
+If you have an FPGA with 500 kbit of internal memory or more, you can try to
+build a system with on-chip RAM, which is significanly faster than pretty
+much any off-chip solution. Some FPGA boards come with external SRAM or
+SDRAM, which will let you run your code even on a low-end FPGA with less
+on-chip RAM.
 
-- Flash - The typical solution present on Altera dev boards is to use the same
-EPCS serial flash chip for FPGA configuration and program storage. Typically,
-you don't want to execute code from flash, which is slow and cannot be
-programmed by the debugger. Rather, you will want to use a "boot copier" which
-copies flash contents into RAM on a reset, and run the code from RAM.
+- Flash - Virtually all Altera dev boards feature EPCS/EPCQ serial flash
+chips for FPGA configuration, which can also be used as program storage.
+Typically, you don't want to execute code "in-place" from flash,
+which is slow and cannot be programmed by the debugger. Rather, you will
+want to use a "boot copier" which copies flash contents into RAM on a reset,
+and then runs the code from RAM.
 
 Cheaper dev boards come with EPCS4 chip which only provides 512kB of storage
 shared between the FPGA configuration data and the software, so it will
@@ -122,7 +126,7 @@ to be supported by NIOSDuino:
 bigger varieties will be either time-limited or only work while the JTAG
 cable is connected if you use free edition of Quartus.
 
-- SRAM/SDRAM controller. Unless your FPGA has 500kB of internal RAM or more
+- SRAM/SDRAM controller. Unless your FPGA has 500 kbit of on-chip RAM or more
 you'll have to use whatever RAM you have on your dev board.
 
 - PIO. This component can emulate the digital pins of Arduino, so it's
