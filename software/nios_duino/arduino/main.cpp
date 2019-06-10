@@ -18,9 +18,13 @@
 */
 
 #include <Arduino.h>
+#ifdef __ALTERA_MODULAR_ADC
+#include <altera_modular_adc.h>
+#endif
 
 // Declared weak in Arduino.h to allow user redefinitions.
 int atexit(void (* /*func*/ )()) { return 0; }
+
 
 // Weak empty variant initialization function.
 // May be redefined by variant files.
@@ -35,6 +39,12 @@ int main(void)
 	//!init();
 
 	//!initVariant();
+#ifdef __ALTERA_MODULAR_ADC
+	adc_stop(MODULAR_ADC_0_SEQUENCER_CSR_BASE);
+	adc_interrupt_disable(MODULAR_ADC_0_SAMPLE_STORE_CSR_BASE);
+	adc_set_mode_run_continuously(MODULAR_ADC_0_SEQUENCER_CSR_BASE);
+	adc_start(MODULAR_ADC_0_SEQUENCER_CSR_BASE);
+#endif
 
 #if defined(USBCON)
 	USBDevice.attach();

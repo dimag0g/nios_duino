@@ -30,6 +30,8 @@ extern "C" {
 
 #include "Wire.h"
 
+#ifdef __ALTERA_AVALON_I2C
+
 // Initialize Class Variables //////////////////////////////////////////////////
 
 uint8_t TwoWire::rxBuffer[BUFFER_LENGTH];
@@ -185,6 +187,7 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
   //! uint8_t ret = twi_writeTo(txAddress, txBuffer, txBufferLength, 1, sendStop);
   if(txBufferLength == 0) txBufferLength = 1; // ugly hack to allow i2c scanners to use address-only transfers
   uint8_t ret = alt_avalon_i2c_master_transmit(dev, txBuffer, txBufferLength, restart, sendStop);
+
   restart = !sendStop;
 
   // reset tx buffer iterator vars
@@ -341,3 +344,4 @@ void TwoWire::onRequest( void (*function)(void) )
 
 TwoWire Wire = TwoWire();
 
+#endif // __ALTERA_AVALON_I2C

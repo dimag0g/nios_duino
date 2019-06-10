@@ -25,7 +25,6 @@
 #define HardwareSerial_h
 
 #include <inttypes.h>
-//#include <altera_avalon_uart.h>
 #include "Stream.h"
 #include <system.h>
 

@@ -4,31 +4,29 @@ About NIOSDuino
 
 NIOSDuino is an adaptation of Arduino core libraries which run on a system
 built with QSys tool (formely SoPC Builder) from Quartus Prime. This
-enables Arduino code to be reused on Altera FPGA development boards and
-the Arduino hardware modules (or shields) to be used with FPGA boards.
-Currently, Arduino modules with UART, I2C SPI and plain diginal IO are
-supported.
+enables Arduino code to be reused on Intel (formely Altera)
+FPGA development boards and the Arduino hardware modules (or shields)
+to be used with FPGA boards. Currently, Arduino modules with UART,
+I2C SPI and plain diginal IO are supported.
 
 What is *not* implemented:
  - PWM support (aka `AnalogWrite()`)
- - Analog channels (aka `AnalogRead()`)
- - Internal EEPROM is currently simulated with a 1KB RAM block
+ - Internal EEPROM is currently simulated with an on-chip RAM block
 
 Getting started
 ---------------
 
 Here's a quickstart guide which should get you started if you have an FPGA
-board with optional SDRAM memory and EPCS flash. If you're planning to
-purchase a dev board, consider reading the Hardware section below.
+board with an optional SDRAM chip. If you're planning to purchase a dev board,
+consider reading the Hardware section below first.
 
 1. Install Quartus Prime with support package for your FPGA. I used version
-17.0 with a Cyclone IV IC (specifically, EP4CE10).
+17.0 with a MAX1000 dev board based on MAX 10.
 
-2. Create/open a project with clock, reset, EPCS and SDRAM (if you have SDRAM)
-pins assigned to correct locations.
+2. Create/open a project with pins assignements corresponding to the dev board
+that you have.
 
-3. Run Qsys tool and open nios_sdram.qsys (if you plan to use SDRAM) or
-nios_onchip.qsys (if you'll be using internal RAM). Generate the HDL (and the
+3. Run Qsys tool and open nios_duino.qsys. Generate the HDL (and the
 symbol, if you plan to use graphical schematic editor).
 
 4. Instantiate the generated system in your project and connect its outputs
@@ -73,67 +71,100 @@ Hardware
 --------
 
 NIOSDuino should run on any dev board with an FPGA capable of implementing
-a NIOS II CPU, enough on-board RAM to run the code, and enoug flash storage
-if you want your code to be persistent.
+a NIOS II CPU, enough on-board memory to run the code, and enough flash
+storage if you want your code to be persistent.
 
-- FPGA - Ideally, you'll need any IC of Cyclone, or Arria families.
-Stratix is even more powerful, but requires a commercial Quartus license.
-It should also be possible to implement NIOS on a MAX 10 device, but you
-have to make sure the FPGA is big enough to support the CPU. Also check
-that the IO voltage supported by the FPGA is compatible with the hadware
-modules you have. Typically, 3.3V modules work fine with FPGAs which
-support 3.3V IO.
+- FPGA - the smallest NIOS II CPU implementation requires just under 5K LEs,
+so the FPGA you choose must be at least that big. If you plan to build custom
+peripherals, or you want to be able to comfortably debug your system with
+SignalTap, you should get a bigger chip.
+MAX 10 devices are particularly interesting if you need the ADC functionality
+or persistent flash storage, since these are built it. Note that this only
+applies to "Analog" (featuring ADC and Flash) and "Flash" (Flash only) variants.
+The "Compact" MAX 10 variant will have no ADC and very little internal flash.
 
-Note that older Cyclone II family is no logner supported by new versions
-of Quartus IDE, while older Quartus versions don't have the toolchain
-extensions (like C++1x) that Arduino code requires. While it's still
+Also check that the IO voltage supported by the FPGA is compatible with the
+external hadware modules you have. Typically, 3.3V modules work fine with
+FPGAs which support 3.3V IO.
+
+Older Cyclone II family is no logner supported by new versions
+of Quartus IDE, and older Quartus versions don't have the toolchain
+extensions (like C++1x) that recent Arduino code requires. While it's still
 possible to run some older Arduino libraries using the old toolchain, it
 was decided it's not worth the effort, so Cyclone II is not supported.
 
 - RAM - NIOSDuino requires much more RAM than Arduino. Unless you have flash
 which supports code execution, all program code will have to reside in RAM,
 plus there's a lot of overhead in using HAL functions to mimic the AVR
-library. When using small C library and optimization (-O3 or -Os), a typical
-Arduino program should fit into ~64KB. With standard C library and light
-optimization (-01) you will need 128KB or more.
+library API. When using small C library and optimization (-O3 or -Os),
+a typical Arduino program should fit into ~64KB. With standard C library
+and light optimization (-01) you will need 128KB or more.
 
-If you have an FPGA with 500 kbit of internal memory or more, you can try to
-build a system with on-chip RAM, which is significanly faster than pretty
-much any off-chip solution. Some FPGA boards come with external SRAM or
-SDRAM, which will let you run your code even on a low-end FPGA with less
-on-chip RAM.
+If you execute the code from flash, much less RAM is needed, but you will
+still need more than a real Arduino has, because of the API overhead. Pretty
+much any FPGA capable of implementing a NIOS II CPU will have at least
+32 KB of on-chip RAM, which is enough for typical Arduino programs.
 
-- Flash - Virtually all Altera dev boards feature EPCS/EPCQ serial flash
+Debugging your software is much easier when the code resides in RAM, so
+consider getting a dev board with enough on-chip RAM or on-board SDRAM
+even if you want the execute the code from flash in the end.
+
+Note that Intel FPGAs typically provide on-chip RAM as M9K blocks, so you
+must divide your FPGA RAM capacity in kbits by 9 (and not by 8) in order
+to get the usable capacity in KB.
+
+- Flash - SRAM-based FPGA dev boards have EPCS/EPCQ serial flash
 chips for FPGA configuration, which can also be used as program storage.
 Typically, you don't want to execute code "in-place" from flash,
 which is slow and cannot be programmed by the debugger. Rather, you will
 want to use a "boot copier" which copies flash contents into RAM on a reset,
 and then runs the code from RAM.
 
-Cheaper dev boards come with EPCS4 chip which only provides 512kB of storage
-shared between the FPGA configuration data and the software, so it will
+MAX 10 FPGAs (except for "Compact" variant) have internal flash storage
+(CFM/UFM) which can be used as program flash.
+
+Cheap Cyclone dev boards come with EPCS4 chip which only provides 512kB of
+storage shared between the FPGA configuration data and the software, so it will
 probably be not big enough. Try to get at least EPCS16 if you plan to store
-your code on the board.
+your code on the board. EPCS16 is also the smallest external serial flash with
+in-place code execution support.
 
 SoPC
 ----
 
-This project includes a sample SoPC system (nios_sdram.qsys/nios_onchip.qsys)
-which should suit most boards. In case you need to customize the SoPC, here's
-a description of components which should/could be included in the QSys system
-to be supported by NIOSDuino:
+This project includes a sample SoPC system which should suit most boards.
+Before it can be used, you should remove components for peripherals not
+supported by your dev board and those you don't plan to use, and configure
+the remaining components to suit your hardware and needs as described below:
 
 - NIOS CPU. Only the "tiny" variety is available without restrictions,
 bigger varieties will be either time-limited or only work while the JTAG
 cable is connected if you use free edition of Quartus.
 
-- SRAM/SDRAM controller. Unless your FPGA has 500 kbit of on-chip RAM or more
-you'll have to use whatever RAM you have on your dev board.
+- SDRAM controller. This is an interface to common single
+data rate SDRAM chips. Make sure to go though its options and set up the
+RAS/CAS latency and address / data width corresponding to your SDRAM chip.
+Remove it if your dev board doesn't have SDRAM or you don't plan to use it.
+If you have a different kind of RAM, you should remove this block and add
+a different one, corresponding to your RAM type.
+
+- On-chip RAM. This component could be used to store data and / or code 
+of NIOS II CPU, and on systems with no flash memory it can be used to emulate
+the EEPROM. Its size should be adjusted depending on the usage. If, at the
+end of the synthesis your FPGA still has unused M9K blocks, you will
+likely want to increase the size of your on-chip RAM.
 
 - PIO. This component can emulate the digital pins of Arduino, so it's
-required for pretty much anything. Be sure to configure it as Bidir,
-with bits which can be set/reset individually. Obviously, you will have
-as many pins as you have configured, with a max of 32.
+required for pretty much anything. Make sure it's configured as Bidir,
+with bits which can be set/reset individually. You will have as many
+digital IO pins as you have configured, with a max of 32.
+
+- ADC. Provides an interface to built-in ADC block in MAX 10 devices.
+The analog pin locations are fixed, however, you can still configure a
+mapping between analog pins and software ADC channels in the Sequencer tab.
+
+- JTAG UART, 16x2 LCD or any other compoment which can be selected as
+STDIN/STDOUT.
 
 - UART, SPI and I2C controllers. These will be used to interact with
 hadware modules you want to connect to your dev board. It is recommended
@@ -145,19 +176,17 @@ Note that I2C requires pull-up resistors on SDA and SCL pins to function.
 You may get away by enabling internal pull-ups in the FPGA, but it's
 recommended to solder actual 5-10kOhm resistors.
 
-- EPCS controller. You only need it if you plan to store your software in EPCS.
-[Here](https://www.altera.com/support/support-resources/knowledge-base/solutions/rd04112006_450.html)'s
-an article describing how to program the EPCS device with FPGA SOF file and
-software ELF file simultaneously. You don't need to manually type type these
-commands, NIOS Flash programmer will do that for you.
+- Timer. This will enable time-related functions, such as `millis()`
+and `delay()`. It is expected to be configured with a period of 1 ms.
 
-If you don't want to use EPCS controller, you can remove it from the system.
-Don't forget to update the CPU reset vectors if you do.
+- EPCS/EPCQ controller (not included). If your board uses an EPCS/EPCQ device
+for FPGA configuration, you may use it to store the FPGA configuration
+and your software simultaneously. In such case, you should add a corresponding
+component to your Qsys system and point the CPU reset vector to it.
 
-- JTAG UART, 16x2 LCD or any other compoment which can be selected as
-STDIN/STDOUT.
-
-- Timer. This will enable time functions, such as `millis()` and `micros()`.
+- UMF controller. This component provides access to user-mode flash memory
+in MAX 10 FPGAs, which can be used to store your software and also to emulate
+EEPROM (the latter is not implemented yet).
 
 Software
 --------
@@ -190,12 +219,18 @@ Digital pins are accessible by index, starting from 0. That is,
 `digitalPinToPort()` and `portOutputRegister()` are also provided,
 but remember to update port data types from `uint8_t` to `uint32_t`.
 
+ADC pins are continuously polled by the sequencer, and are accessible
+via `analogRead(pin)`, where `pin` corresponds to the index of the respective
+channel in the sequencer, starting from 0. The refresh rate will depend on
+the ADC module configuration and the number of channels. A single channel can
+be continuously sampled at 1MSps.
+
 Hardware UARTs are accessible as `Serial0`, `Serial1`, etc. Only the baudrate
 setting is taken into account in `SerialN.begin()`, bit settings have to be
 configured in QSys and cannot be changed at runtime.
 
 `Serial` is whatever component you chose as STDIN/STDOUT,
-which can be a UART, a JTAG UART (default) or even an LCD. Obviously, any
+which can be a UART, a JTAG UART (default) or even a 16x2 LCD. Obviously, any
 baudrate or bit settings given in `Serial.begin()` are ignored for non-UART
 hardware. If a hardware UART is to be used in a sketch which refers to `Serial`,
 and you don't want to reconfigure STDIN/STDOUT, you can
@@ -215,3 +250,8 @@ of the HAL driver: when an empty (address-only) transfer is submitted to
 `endTransmission()`, an extra byte is transmitted before the stop sequence.
 This is notably required for I2C scanners to work, since they typically
 use zero-length transfers to detect I2C slaves.
+
+EEPROM emulation requires either internal flash memory, or a RAM block which
+is not cleared on a CPU reset. This memory must hold a section with
+[`(NOLOAD)`](https://electronics.stackexchange.com/a/442757/72179)
+directive to avoid being zeroed by the startup code.

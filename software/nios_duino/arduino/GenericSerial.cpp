@@ -27,6 +27,7 @@
 #include "GenericSerial.h"
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/alt_dev.h>
 #include <fcntl.h>
 
 extern alt_fd alt_fd_list[];

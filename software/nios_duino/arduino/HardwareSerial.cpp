@@ -28,9 +28,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include "Arduino.h"
-#include <altera_avalon_uart_regs.h>
-#include <altera_avalon_uart.h>
-#include <altera_avalon_uart_fd.h>
+
 //extern int altera_avalon_uart_read(altera_avalon_uart_state* sp, char* ptr, int len, int flags);
 //extern int altera_avalon_uart_write(altera_avalon_uart_state* sp, const char* ptr, int len, int flags);
 #include <sys/stat.h>
@@ -38,11 +36,10 @@
 #include <fcntl.h>
 #include "HardwareSerial.h"
 
-
-
-
-#if defined(UART_0_BASE) || defined(UART_1_BASE)
-
+#ifdef __ALTERA_AVALON_UART
+#include <altera_avalon_uart_regs.h>
+#include <altera_avalon_uart.h>
+#include <altera_avalon_uart_fd.h>
 
 void HardwareSerial::begin(unsigned long baud, byte config)
 {
@@ -91,4 +88,4 @@ size_t HardwareSerial::write(uint8_t c)
   //return fputc(c, fp);
 }
 
-#endif // whole file
+#endif // __ALTERA_AVALON_UART

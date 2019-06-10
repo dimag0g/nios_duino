@@ -15,6 +15,8 @@
 
 #include "SPI.h"
 
+#ifdef  __ALTERA_AVALON_SPI
+
 SPIClass SPI;
 
 uint8_t SPIClass::initialized = 0;
@@ -34,3 +36,4 @@ void SPIClass::end() {
 
 }
 
+#endif // __ALTERA_AVALON_SPI

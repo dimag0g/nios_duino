@@ -17,8 +17,6 @@
 #define _SPI_H_INCLUDED
 
 #include <Arduino.h>
-#include <altera_avalon_spi_regs.h>
-#include <system.h>
 
 #ifndef LSBFIRST
 #define LSBFIRST 0
@@ -39,6 +37,9 @@
 #define SPI_MODE1 0x04
 #define SPI_MODE2 0x08
 #define SPI_MODE3 0x0C
+
+#ifdef __ALTERA_AVALON_SPI
+#include <altera_avalon_spi_regs.h>
 
 class SPISettings {
 public:
@@ -207,5 +208,7 @@ private:
 };
 
 extern SPIClass SPI;
+
+#endif // __ALTERA_AVALON_SPI
 
 #endif
