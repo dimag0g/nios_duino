@@ -10,7 +10,7 @@ to be used with FPGA boards. Currently, Arduino modules with UART,
 I2C SPI and plain diginal IO are supported.
 
 What is *not* implemented:
- - PWM support (aka `AnalogWrite()`)
+ - PWM support (aka `AnalogWrite()`) is a work in progress
  - Internal EEPROM is currently simulated with an on-chip RAM block
 
 Getting started
@@ -255,3 +255,11 @@ EEPROM emulation requires either internal flash memory, or a RAM block which
 is not cleared on a CPU reset. This memory must hold a section with
 [`(NOLOAD)`](https://electronics.stackexchange.com/a/442757/72179)
 directive to avoid being zeroed by the startup code.
+
+Disclaimer
+----------
+
+This is a personal project which is not endorsed by or affiliated with either
+Arduino or Intel, who have no obligations to provide you with technical support
+or warranty in regards to this library, even if you are entitled to a warrany
+or support in regards to their own products.
