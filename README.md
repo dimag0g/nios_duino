@@ -3,15 +3,10 @@ About NIOSDuino
 ---------------
 
 NIOSDuino is an adaptation of Arduino core libraries which run on a system
-built with QSys tool (formely SoPC Builder) from Quartus Prime. This
+built with Qsys tool (formely SoPC Builder) from Quartus Prime. This
 enables Arduino code to be reused on Intel (formely Altera)
 FPGA development boards and the Arduino hardware modules (or shields)
-to be used with FPGA boards. Currently, Arduino modules with UART,
-I2C SPI and plain diginal IO are supported.
-
-What is *not* implemented:
- - PWM support (aka `AnalogWrite()`) is a work in progress
- - Internal EEPROM is currently simulated with an on-chip RAM block
+to be used with FPGA boards.
 
 Getting started
 ---------------
@@ -23,7 +18,7 @@ consider reading the Hardware section below first.
 1. Install Quartus Prime with support package for your FPGA. I used version
 17.0 with a MAX1000 dev board based on MAX 10.
 
-2. Create/open a project with pins assignements corresponding to the dev board
+2. Create/open a project with pin assignements corresponding to the dev board
 that you have.
 
 3. Run Qsys tool and open nios_duino.qsys. Generate the HDL (and the
@@ -37,13 +32,13 @@ to FPGA pins. If your board has LEDs, connect one to PIO[13].
 6. Open the NIOS II Eclipse IDE. Create a BSP (board support package) and
 NIOS II application project from template. If you have less than 100KB of RAM
 (typically, when using on-chip memory), pick "Hello world small" as a base,
-otherwise pick regular "Hello world".  Set the STDIN/STDOUT to jtag_uart_0,
-and sys_clk timer to timer_0. Additionally, if you have picked
+otherwise pick regular "Hello world".  Set the STDIN/STDOUT to `jtag_uart_0`,
+and system timer to `timer_0`. Additionally, if you have picked
 "Hello world small", go to BSP advanced settings and enable C++ support.
 
 
-7. In the NIOS II Application project, remove hello_world.c file, and
-add files from nios_duino folder, keeping the folder structure. Then add
+7. In the NIOS II Application project, remove `hello_world.c` file, and
+add files from `nios_duino` folder, keeping the folder structure. Then add
 a few settings to project properties:
 
  - add `-std=gnu++11` to the compiler switches
@@ -109,7 +104,7 @@ Debugging your software is much easier when the code resides in RAM, so
 consider getting a dev board with enough on-chip RAM or on-board SDRAM
 even if you want the execute the code from flash in the end.
 
-Note that Intel FPGAs typically provide on-chip RAM as M9K blocks, so you
+Note that Intel FPGAs provide on-chip RAM as M9K blocks, so you
 must divide your FPGA RAM capacity in kbits by 9 (and not by 8) in order
 to get the usable capacity in KB.
 
@@ -144,9 +139,12 @@ cable is connected if you use free edition of Quartus.
 - SDRAM controller. This is an interface to common single
 data rate SDRAM chips. Make sure to go though its options and set up the
 RAS/CAS latency and address / data width corresponding to your SDRAM chip.
-Remove it if your dev board doesn't have SDRAM or you don't plan to use it.
-If you have a different kind of RAM, you should remove this block and add
-a different one, corresponding to your RAM type.
+On many boards, running SDRAM at higher frequencies requires a separate
+clock with a phase shift compared to system clock: refer to a sample project
+for your dev board to find out what the correct PLL settings are.
+Remove the component if your board doesn't have SDRAM or you don't use it.
+If you have SRAM, rather than SDRAM, you need to use a generic tri-state
+controller instead (again, the sample project for your board is a good start).
 
 - On-chip RAM. This component could be used to store data and / or code 
 of NIOS II CPU, and on systems with no flash memory it can be used to emulate
@@ -158,6 +156,12 @@ likely want to increase the size of your on-chip RAM.
 required for pretty much anything. Make sure it's configured as Bidir,
 with bits which can be set/reset individually. You will have as many
 digital IO pins as you have configured, with a max of 32.
+
+- PWM. This component provides you with output pins supporting PWM
+functionality, such as `analogWrite()` and `tone()`. Unlike other
+components, this one is not standard and must be
+[obtained](https://github.com/dimag0g/avalon_pwm) separately.
+Refer to its own README file for instructions.
 
 - ADC. Provides an interface to built-in ADC block in MAX 10 devices.
 The analog pin locations are fixed, however, you can still configure a
@@ -173,7 +177,7 @@ include several UARTs and easily integrate them in Arduino framework as
 `Serial1`, `Serial2`, etc.
 
 Note that I2C requires pull-up resistors on SDA and SCL pins to function.
-You may get away by enabling internal pull-ups in the FPGA, but it's
+You may get away with enabling internal pull-ups in the FPGA, but it's
 recommended to solder actual 5-10kOhm resistors.
 
 - Timer. This will enable time-related functions, such as `millis()`
@@ -193,7 +197,7 @@ Software
 
 The goal of NIOSDuino is to allow Arduino sketches to run with minimum
 modifications or none at all. Usually, all you need to do is to rename
-the sketch file from *.ino to *.cpp and compile. Some sketches rely on
+the sketch file from `*.ino` to `*.cpp` and compile. Some sketches rely on
 the Arduino IDE preprocessing to access the necessary include files.
 Eclipse will not do that for you, so if you see errors when compiling your
 sketch, try adding the following to the beginning of the file:
@@ -205,19 +209,25 @@ and `loop()` before they are used.
 
 Additional libraries you'd like to use should be copied to your project folder.
 Then you'll have to update the Makefile to include new header files locatons
-to `ALT_INCLUDE_DIRS` and new rules to build the *.cpp files (which is done
+to `ALT_INCLUDE_DIRS` and new rules to build the `*.cpp` files (which is done
 by right-clicking on your Eclipse project and selecting "Refresh").
 
-Unlike actual AVR chips, QSys components don't share pins with each other.
-This means you can use all the PIO pins and SPI/UART modules in parallel.
-There's also no need to e.g. configure the direction for SPI/UART pins.
+Unlike actual AVR chips, Qsys components don't share pins with each other.
+This means you can use all the PIO/PWM/SPI/UART pins in parallel.
+There's also no need to e.g. configure the direction for SPI/UART/PwM pins.
 Note that existing libraries may still assume that shared pins are used, and
-configure them accordingly.
+configure random PIO pins in a way that would be required on AVR. This is
+usually not a problem, but it may have undesired side-effects in some cases.
 
 Digital pins are accessible by index, starting from 0. That is,
 `digitalWrite(0, LOW)` will set PIO pin 0 to LOW. Macros like
 `digitalPinToPort()` and `portOutputRegister()` are also provided,
 but remember to update port data types from `uint8_t` to `uint32_t`.
+
+PWM pins are separate from PIO pins (so `digitalWrite(pin, LOW)` doesn't stop
+the output started by `analogWrite(pin, duty_cycle)`). You will not be able
+to reconfigure PWM pins as inputs. If you need to output constant LOW/HIGH
+levels, use `analogWrite(pin, 0)` and `analogWrite(pin, 255)` respectively.
 
 ADC pins are continuously polled by the sequencer, and are accessible
 via `analogRead(pin)`, where `pin` corresponds to the index of the respective
@@ -227,7 +237,7 @@ be continuously sampled at 1MSps.
 
 Hardware UARTs are accessible as `Serial0`, `Serial1`, etc. Only the baudrate
 setting is taken into account in `SerialN.begin()`, bit settings have to be
-configured in QSys and cannot be changed at runtime.
+configured in Qsys and cannot be changed at runtime.
 
 `Serial` is whatever component you chose as STDIN/STDOUT,
 which can be a UART, a JTAG UART (default) or even a 16x2 LCD. Obviously, any
@@ -263,3 +273,14 @@ This is a personal project which is not endorsed by or affiliated with either
 Arduino or Intel, who have no obligations to provide you with technical support
 or warranty in regards to this library, even if you are entitled to a warrany
 or support in regards to their own products.
+
+If you have bug reports or feature requests, feel free to open a new issue.
+General support questions can be asked here too, however, if you're familiar with
+https://electronics.stackexchange.com/ or https://arduino.stackexchange.com/,
+I advise you to post such questions there, *provided that they are on-topic
+on these sites*, as doing so will promote the project and you're likely to get
+an answer much quicker from a larger community. Make sure to write your
+question in a way that it can be understood without any prior knowledge of
+this project, and that makes it clear what your specific problem is and what
+you have tried to solve it. You can always come back here if your question
+doesn't get an answer on Stack Exchange, but avoid double-posting from the start.
