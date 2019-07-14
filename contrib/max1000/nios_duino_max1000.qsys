@@ -236,9 +236,9 @@
    type="conduit"
    dir="end" />
  <interface name="clk_in" internal="clk_0.clk_in" type="clock" dir="end" />
- <interface name="i2c_0_ext" internal="i2c_0.i2c_serial" type="conduit" dir="end" />
+ <interface name="i2c" internal="i2c_0.i2c_serial" type="conduit" dir="end" />
  <interface
-   name="pio_led"
+   name="pio"
    internal="pio_0.external_connection"
    type="conduit"
    dir="end" />
@@ -249,7 +249,7 @@
    type="conduit"
    dir="end" />
  <interface name="sdram_clk" internal="pll.c1" type="clock" dir="start" />
- <interface name="spi_0_ext" internal="spi_0.external" type="conduit" dir="end" />
+ <interface name="spi" internal="spi_0.external" type="conduit" dir="end" />
  <interface
    name="spi_flash"
    internal="spi_flash.external"
