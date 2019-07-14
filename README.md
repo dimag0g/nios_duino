@@ -164,7 +164,7 @@ components, this one is not standard and must be
 Refer to its own README file for instructions.
 
 - ADC. Provides an interface to built-in ADC block in MAX 10 devices.
-The analog pin locations are fixed, however, you can still configure a
+The analog pin locations are fixed, however, you can configure a
 mapping between analog pins and software ADC channels in the Sequencer tab.
 
 - JTAG UART, 16x2 LCD or any other compoment which can be selected as
@@ -178,7 +178,8 @@ include several UARTs and easily integrate them in Arduino framework as
 
 Note that I2C requires pull-up resistors on SDA and SCL pins to function.
 You may get away with enabling internal pull-ups in the FPGA, but it's
-recommended to solder actual 5-10kOhm resistors.
+recommended to solder actual 5-10kOhm resistors. Open-drain pins can
+be implemented as described [here](https://electronics.stackexchange.com/q/443498/72179).
 
 - Timer. This will enable time-related functions, such as `millis()`
 and `delay()`. It is expected to be configured with a period of 1 ms.
