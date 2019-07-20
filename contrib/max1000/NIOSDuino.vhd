@@ -41,7 +41,6 @@ ARCHITECTURE BEHAVIORAL OF NIOSDuino IS
 
   COMPONENT nios_duino_max1000 IS
   PORT (
-      adc_pll_locked_export : in    std_logic                     := '0';             -- adc_pll_locked.export
       clk_in_clk            : in    std_logic                     := '0';             --         clk_in.clk
       i2c_sda_in            : in    std_logic                     := '0';             --      i2c_0_ext.sda_in
       i2c_scl_in            : in    std_logic                     := '0';             --               .scl_in
@@ -76,7 +75,6 @@ ARCHITECTURE BEHAVIORAL OF NIOSDuino IS
 BEGIN
 
   nios_duino1 : nios_duino_max1000  PORT MAP (
-    adc_pll_locked_export   => '0',
     clk_in_clk              => CLK,
     reset_reset_n           => Reset,
     i2c_sda_in              => i2c_sda_in,
