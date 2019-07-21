@@ -26,6 +26,7 @@
 
 #include "Arduino.h"
 #include "pins_arduino.h"
+#include <avalon_pwm_regs.h>
 
 #ifdef __ALTERA_MODULAR_ADC
 #include <altera_modular_adc.h>
@@ -61,17 +62,16 @@ void analogReference(uint8_t mode)
 // to digital output.
 void analogWrite(uint8_t pin, int val)
 {
-	// We need to make sure the PWM output is enabled for those pins
-	// that support it, as we turn it off when digitally reading or
-	// writing with them.  Also, make sure the pin is in output mode
-	// for consistenty with Wiring, which doesn't require a pinMode
-	// call for the analog output pins.
-	pinMode(pin, OUTPUT);
-
-	if (val < 128) {
-		digitalWrite(pin, LOW);
-	} else {
-		digitalWrite(pin, HIGH);
-	}
+	IOWR_AVALON_PWM_DUTY_CYCLE(PWM_0_BASE, pin, val);
 }
 
+void tone(uint8_t pin, unsigned int frequency, unsigned long duration)
+{
+	IOWR_AVALON_PWM_PRESCALER(PWM_0_BASE, (PWM_0_FREQ/512)/frequency);
+	IOWR_AVALON_PWM_DUTY_CYCLE(PWM_0_BASE, pin, 128);
+}
+
+void noTone(uint8_t pin)
+{
+	IOWR_AVALON_PWM_DUTY_CYCLE(PWM_0_BASE, pin, 0);
+}
