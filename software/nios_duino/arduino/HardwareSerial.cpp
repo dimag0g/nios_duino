@@ -22,7 +22,7 @@
   Modified 3 December 2013 by Matthijs Kooijman
 */
 
-//! NIOSDuino custom file, (c) Dmitry Grigoryev, 2018
+//! NIOSDuino custom file, (c) Dmitry Grigoryev, 2018-2020
 
 #include <stdlib.h>
 #include <string.h>
@@ -46,7 +46,7 @@ void HardwareSerial::begin(unsigned long baud, byte config)
   alt_u32 divisor = (UART_0_FREQ/baud)-1;
   IOWR_ALTERA_AVALON_UART_DIVISOR(UART_0_BASE, divisor);
    //fp = fopen(UART_0_NAME, "r+");
-  fd = ::open(devname, 0);
+  fd = ::open(devname, O_RDWR);
 }
 
 void HardwareSerial::end()
