@@ -22,15 +22,15 @@
   Modified 28 September 2010 by Mark Sproul
 */
 
-//! NIOSDuino custom file, (c) Dmitry Grigoryev, 2019
+//! NIOSDuino custom file, (c) Dmitry Grigoryev, 2019-2020
 
 #include "Arduino.h"
 #include "pins_arduino.h"
-#include <avalon_pwm_regs.h>
+#include <system.h>
+#include <io.h>
 
 #ifdef __ALTERA_MODULAR_ADC
 #include <altera_modular_adc.h>
-#include <io.h>
 int analogRead(uint8_t pin)
 {
 	//adc_stop(MODULAR_ADC_0_SEQUENCER_CSR_BASE);
@@ -40,8 +40,6 @@ int analogRead(uint8_t pin)
     //         & ALTERA_MODULAR_ADC_SEQUENCER_CMD_RUN_MSK);
 	return IORD_32DIRECT((MODULAR_ADC_0_SAMPLE_STORE_CSR_BASE + (pin << 2)),0);
 }
-#else
-int analogRead(uint8_t pin){return 0;}
 #endif
 
 uint8_t analog_reference = DEFAULT;
@@ -55,11 +53,8 @@ void analogReference(uint8_t mode)
 }
 
 
-
-// Right now, PWM output only works on the pins with
-// hardware support.  These are defined in the appropriate
-// pins_*.c file.  For the rest of the pins, we default
-// to digital output.
+#ifdef __AVALON_PWM
+#include <avalon_pwm_regs.h>
 void analogWrite(uint8_t pin, int val)
 {
 	IOWR_AVALON_PWM_DUTY_CYCLE(PWM_0_BASE, pin, val);
@@ -75,3 +70,4 @@ void noTone(uint8_t pin)
 {
 	IOWR_AVALON_PWM_DUTY_CYCLE(PWM_0_BASE, pin, 0);
 }
+#endif
