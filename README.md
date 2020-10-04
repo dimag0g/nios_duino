@@ -46,7 +46,9 @@ a few settings to project properties:
  - add definitions: `__AVR__` and `ARDUINO=185` to C and C++ symbols
 
  - add "arduino" folder and folders of libraries you're going to use
-(e.g. "arduino/SPI/src") to C and C++ include directories
+(e.g. "arduino/SPI/src") to C and C++ include directories. Additional
+third-party libraries (Adafruit, etc.) can be installed and set up
+in a similar manner.
 
  - enable dead code elimination with `-ffunction-sections` and `--gc-sections`
 
@@ -168,7 +170,7 @@ The analog pin locations are fixed, however, you can configure a
 mapping between analog pins and software ADC channels in the Sequencer tab.
 
 - JTAG UART, 16x2 LCD or any other compoment which can be selected as
-STDIN/STDOUT.
+STDIN/STDOUT/STDERR.
 
 - UART, SPI and I2C controllers. These will be used to interact with
 hadware modules you want to connect to your dev board. It is recommended
@@ -240,7 +242,7 @@ Hardware UARTs are accessible as `Serial0`, `Serial1`, etc. Only the baudrate
 setting is taken into account in `SerialN.begin()`, bit settings have to be
 configured in Qsys and cannot be changed at runtime.
 
-`Serial` is whatever component you chose as STDIN/STDOUT,
+`Serial` is whatever component you chose as STDIN/STDOUT/STDERR,
 which can be a UART, a JTAG UART (default) or even a 16x2 LCD. Obviously, any
 baudrate or bit settings given in `Serial.begin()` are ignored for non-UART
 hardware. If a hardware UART is to be used in a sketch which refers to `Serial`,
@@ -249,7 +251,9 @@ and you don't want to reconfigure STDIN/STDOUT, you can
     #define Serial Serial0
 
 Note that the same UART should not be used as STDIN/STDOUT and as `SerialN`
-device at the same time.
+device at the same time. Also, writing into `Serial` outputs data to both
+STDOUT and STDERR, so there's no point assigning the same device to both
+(doing so will result in duplicated characters).
 
 SPI controller manages 3 pins - MISO, MOSI and CLK. Chipselect signal (SS or CS)
 is not used and should not be routed to an FPGA pin. Arduino libraries typically
@@ -285,3 +289,7 @@ question in a way that it can be understood without any prior knowledge of
 this project, and that makes it clear what your specific problem is and what
 you have tried to solve it. You can always come back here if your question
 doesn't get an answer on Stack Exchange, but avoid double-posting from the start.
+
+VHDPlus IDE developers have posted a [video tutorial](https://youtu.be/YhavjKajX_w)
+which makes use of NIOSDuino. While the HDL workflow is substantially different from
+that of Quartus Prime, the software workflow is very similar.
