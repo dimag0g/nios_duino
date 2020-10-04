@@ -16,7 +16,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-//! NIOSDuino custom file, (c) Dmitry Grigoryev, 2018
+//! NIOSDuino custom file, (c) Dmitry Grigoryev, 2018-2020
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -62,7 +62,7 @@ int GenericSerial::read(void)
 	if(next_char != -1) {
 		c = next_char;
 		next_char = -1;
-	} else while(::read(0, &c, 1) == 1);
+	} else if(::read(0, &c, 1) != 1) return -1;
 	return c;
 }
 
